@@ -87,9 +87,9 @@ function thmsInNbConv(marked,text) {
 
             { //****************************************************************************
                 var EnvReplace = function(message) {
-                    //console.log(message);
-                    //restore incorrect replacements done during mathjaxutils.remove_math(text); [MarkdownCell.prototype.render]
-                    //var message = message.replace(/&lt;div([\S\s]*)&lt;\/div&gt;/gm,
+                    
+                    //Restore incorrect replacements done during mathjaxutils.remove_math(text); [MarkdownCell.prototype.render]
+                    //This also allows to highlight text in latex_envs using the highlighter extension
                     var message = message.replace(/&lt;(div|span)[\S\s]*&lt;\/(\1)&gt;/gm,
                         function(wholeMatch,m1,m2) {
                             wholeMatch = wholeMatch.replace(/&lt;/gm,'<');
@@ -117,14 +117,18 @@ function thmsInNbConv(marked,text) {
                     );
 
                     
-                    //var out = message.replace(/\\begin{(\w+)}([\s\S]*?)\\end{\1}/gm, function(wholeMatch, m1, m2) {
                     var out = message.replace(/\\begin{(\w+)}([\s\S]*?)\\end{\1}/gm, function(wholeMatch, m1, m2) {
-
+                        if (m1=='equation' | m1=='align' | m1=='aligned') { 
+                            // Though these should not be converted to md, sometimes they are... Strange issue corrected nov 22, 2015 /
+                            wholeMatch = wholeMatch.replace(/<[/]?em>/g, "_"); //correct possible incorrect md remplacements in eqs
+                            wholeMatch = wholeMatch.replace(/\s\\\s/g, "\\\\"); //correct possible incorrect md remplacements in eqs
+                            wholeMatch = wholeMatch.replace(/left{/g, "left\\{"); //correct possible incorrect md remplacements in eqs
+                            return wholeMatch;
+                        }
 
                         //if(!environmentMap[m1]) return wholeMatch;
                         var environment = environmentMap[m1];
-                        if (!environment) return wholeMatch;
-                        
+                        if (!environment) return wholeMatch;                        
 
                         var title = environment.title;
                         if (environment.counter) {
@@ -138,7 +142,6 @@ function thmsInNbConv(marked,text) {
                         // Try to check if there is remaining Markdown
                         // |\n\s-[\s]*(\w+)/gm
                         // /\*{1,2}([\s\S]*?)\*{1,2}|\_{1,2}([\s\S]*?)\_{1,2}/gm)
-                        
                         if (m2.match(/\*{1,2}([\s\S]*?)\*{1,2}|\_{1,2}([\S]*?)\_{1,2}|```/gm)) {
                             var m2 = marked.parser(marked.lexer(m2));
                         }
@@ -230,19 +233,19 @@ function thmsInNbConv(marked,text) {
                         eqNum++;
                         return wholeMatch + '\\tag{'+eqNum+'}' ;
                        */
-                            return wholeMatch; //+ '\\tag{'+m1+':'+m2+'}' ; 
+                            return '\\label{'+m1 + ':' + m2+'}'; //wholeMatch; //small bug corrected nov 14, 2015 //+ '\\tag{'+m1+':'+m2+'}' ; 
                         } else {
                             if (eqLabelWithNumbers) {
                                 eqNum++;
                                 //return '<a id="' + m1 + m2 + '">' + '['+m1+':'+m2+']' + '</a>' + '\\tag{'+eqNum+'}' ;
                                 eqLabNums[m2] = eqNum.toString();
 
-                                return '\\tag{' + eqNum + '}' + '<!--' + wholeMatch + '-->' ;
+                                return  '\\tag{' + eqNum + '}' + '<!--' + wholeMatch + '-->' ;
                             }
                             return '\\tag{' + m2 + '}' + '<!--' + wholeMatch + '-->';
                         };
                     }
-                    return '<a id="' + m1 + m2 + '">' + '[' + m1 + ':' + m2 + ']' + '</a>';
+                    return   '<a id="' + m1 + m2 + '">' + '[' + m1 + ':' + m2 + ']' + '</a>';
                 });
 
 
@@ -250,7 +253,7 @@ function thmsInNbConv(marked,text) {
                 var text = text.replace(/\\ref{(\S+):(\S+)}/g, function(wholeMatch, m1, m2) {
                     m2 = m2.replace(/<[/]?em>/g, "_");
                     if (conversion_to_html) {
-                        if (m1 == "eq") return wholeMatch;
+                        if (m1 == "eq") return '\\ref{'+m1 + ':' + m2+'}'; //wholeMatch; //small bug corrected nov 14, 2015
                     } else {
                         if (m1 == "eq") {
                             if (eqLabelWithNumbers) {
@@ -261,6 +264,7 @@ function thmsInNbConv(marked,text) {
 
                     return '<a class="latex_ref" href="#' + m1 + m2 + '">' + '[' + m1 + ':' + m2 + ']' + '</a>';
                 });
+
 
                 //CITATIONS
                 var text = text.replace(/\\cite(\[[\S\s]+\])?{([\w\s-_,:]+)}/g, function(wholeMatch, additional_text, keys) {
