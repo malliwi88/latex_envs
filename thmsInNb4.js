@@ -33,7 +33,7 @@ function initmap(){
                     theorem:      { title: "Theorem"    ,counter: thmCounter  },
                     lemma:        { title: "Lemma"      ,counter: thmCounter  },
                     corollary:    { title: "Corollary"  ,counter: thmCounter  },
-                    proposition:  { title: "Property"   ,counter: thmCounter  },
+                    proposition:  { title: "Proposition"   ,counter: thmCounter  },
                     definition:   { title: "Definition" ,counter: thmCounter  },
                     remark:       { title: "Remark"     ,counter: thmCounter  },
                     problem:      { title: "Problem"    ,counter: excsCounter },
